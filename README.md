@@ -1,8 +1,12 @@
 # Order Notification System
 
-Full-stack order management and notification system built with Spring Boot, React, TypeScript, PostgreSQL and Docker.
+Full-stack order management and notification system built with **Spring Boot, React, TypeScript, PostgreSQL and Docker**.
 
 The project demonstrates a real-world order lifecycle while using the **Observer Design Pattern** to decouple order status changes from audit, notification and stock-related operations.
+
+## Dashboard Preview
+
+![Order Notification System Dashboard](docs/dashboard.png)
 
 ## Features
 
@@ -243,7 +247,7 @@ The API validates cases such as:
 
 Errors are handled centrally through `GlobalExceptionHandler`.
 
-Example:
+Example response:
 
 ```json
 {
@@ -257,7 +261,7 @@ Example:
 
 ## Swagger / OpenAPI
 
-When the application is running:
+When the backend is running, Swagger UI is available at:
 
 ```text
 http://localhost:8080/swagger-ui/index.html
@@ -302,7 +306,7 @@ POSTGRES_PASSWORD=your_secure_password
 
 Do not commit the `.env` file.
 
-### 3. Start the system
+### 3. Start the application
 
 ```bash
 docker compose up --build
@@ -318,23 +322,25 @@ PostgreSQL Database
 
 ## Application URLs
 
-Frontend:
+### Frontend
 
 ```text
 http://localhost:5173
 ```
 
-Swagger:
+### Swagger
 
 ```text
 http://localhost:8080/swagger-ui/index.html
 ```
 
-REST API:
+### REST API
 
 ```text
 http://localhost:8080/api/orders
 ```
+
+### PostgreSQL
 
 PostgreSQL is exposed locally through:
 
@@ -342,32 +348,48 @@ PostgreSQL is exposed locally through:
 localhost:5433
 ```
 
+## Docker Services
+
+The project contains three main services:
+
+```text
+order-notification-frontend
+order-notification-backend
+order-notification-db
+```
+
+The frontend uses Nginx to serve the React production build and proxy `/api` requests to the Spring Boot backend.
+
+The backend communicates with PostgreSQL through the internal Docker Compose network.
+
 ## Stop The Application
+
+Stop the containers:
 
 ```bash
 docker compose down
 ```
 
-The PostgreSQL data remains stored inside the Docker volume.
+PostgreSQL data remains stored inside the Docker volume.
 
-To also delete the database volume:
+To also remove the database volume:
 
 ```bash
 docker compose down -v
 ```
 
-> `down -v` permanently removes the Docker database volume.
+> `docker compose down -v` permanently deletes the PostgreSQL Docker volume and its stored data.
 
 ## Backend Tests
 
 The project contains automated tests for:
 
-- Application context
+- Spring application context
 - Order status transition validation
 - Observer event publishing
 - Order service behavior
 
-Run tests on Windows:
+Run the tests on Windows:
 
 ```powershell
 .\mvnw.cmd clean test
@@ -379,15 +401,23 @@ Current test suite:
 Tests run: 10
 Failures: 0
 Errors: 0
+Skipped: 0
 ```
 
-The Spring application context test uses an H2 in-memory database so the test suite can run without requiring a local PostgreSQL instance.
+The application context test uses an **H2 in-memory database**, which allows the test suite to run without requiring a local PostgreSQL instance.
 
 ## Frontend Production Build
+
+Install dependencies:
 
 ```bash
 cd frontend
 npm install
+```
+
+Create the production build:
+
+```bash
 npm run build
 ```
 
@@ -395,6 +425,9 @@ npm run build
 
 ```text
 order-notification-system/
+|
+|-- docs/
+|   `-- dashboard.png
 |
 |-- src/
 |   |-- main/
@@ -430,22 +463,115 @@ order-notification-system/
 `-- README.md
 ```
 
+## Backend Structure
+
+The backend follows a layered structure:
+
+```text
+Controller
+    |
+    v
+Service
+    |
+    +------> Repository
+    |
+    +------> Status Validator
+    |
+    `------> Event Publisher
+                 |
+                 +------> AuditObserver
+                 +------> EmailObserver
+                 `------> StockObserver
+```
+
+### Controller Layer
+
+Handles HTTP requests and responses.
+
+### Service Layer
+
+Contains the main business logic and order lifecycle management.
+
+### Repository Layer
+
+Provides persistence through Spring Data JPA and PostgreSQL.
+
+### Validation Layer
+
+Ensures only valid order status transitions are accepted.
+
+### Observer Layer
+
+Handles independent reactions to order status changes.
+
+## Example Order Flow
+
+A newly created order starts with:
+
+```text
+CREATED
+```
+
+When the user selects **Start Preparing**:
+
+```text
+CREATED -> PREPARING
+```
+
+the backend:
+
+```text
+1. Validates the transition
+2. Updates the order in PostgreSQL
+3. Creates an OrderStatusChangedEvent
+4. Publishes the event
+5. AuditObserver records the change
+6. EmailObserver simulates notification
+7. StockObserver simulates stock reservation
+```
+
+The frontend then receives the updated order and refreshes the dashboard.
+
+## Error Handling
+
+The project uses a centralized `GlobalExceptionHandler`.
+
+Handled scenarios include:
+
+```text
+OrderNotFoundException
+InvalidOrderStatusTransitionException
+Validation errors
+Malformed JSON requests
+```
+
+This allows the API to return consistent error responses.
+
 ## What This Project Demonstrates
 
-This project demonstrates:
+This project demonstrates practical experience with:
 
-- Layered backend architecture
-- REST API development
-- Object-oriented design
+- Full-stack application development
+- Java and Spring Boot
+- React and TypeScript
+- REST API design
+- Layered architecture
+- Object-oriented programming
 - Observer Design Pattern
+- Event-driven application behavior
 - State transition validation
-- Database persistence
-- Exception handling
+- PostgreSQL integration
+- Spring Data JPA
 - Input validation
-- Automated testing
+- Global exception handling
+- Automated testing with JUnit and Mockito
+- Test isolation with H2
+- Swagger / OpenAPI
+- Docker
+- Docker Compose
+- Nginx reverse proxy
 - Frontend and backend integration
-- Dockerized full-stack deployment
-- API documentation
+- Environment variable management
 
 ## Author
 
